@@ -15,7 +15,7 @@ class FindOrCreateCategory {
     });
 
     if (!existingCategory) {
-      const category = await categoriesRepository.create({
+      const category = categoriesRepository.create({
         title,
       });
 

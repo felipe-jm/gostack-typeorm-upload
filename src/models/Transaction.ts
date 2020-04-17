@@ -8,6 +8,8 @@ import {
 
 import Category from './Category';
 
+export type TransactionType = 'income' | 'outcome';
+
 @Entity('transactions')
 class Transaction {
   @PrimaryGeneratedColumn('uuid')
@@ -16,8 +18,12 @@ class Transaction {
   @Column()
   title: string;
 
-  @Column()
-  type: 'income' | 'outcome';
+  @Column({
+    type: 'enum',
+    enum: ['income', 'outcome'],
+    default: 'income',
+  })
+  type: TransactionType;
 
   @Column('float')
   value: number;
@@ -25,14 +31,16 @@ class Transaction {
   @Column()
   category_id: string;
 
-  @ManyToOne(() => Category, category => category.transactions)
+  @ManyToOne(() => Category, category => category.transactions, {
+    eager: true,
+  })
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @Column()
+  @Column('time with time zone')
   created_at: Date;
 
-  @Column()
+  @Column('time with time zone')
   updated_at: Date;
 }
 

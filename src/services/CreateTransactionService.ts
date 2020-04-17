@@ -11,7 +11,7 @@ import Transaction from '../models/Transaction';
 interface Request {
   title: string;
   value: number;
-  type: string;
+  type: 'income' | 'outcome';
   category: string;
 }
 
@@ -23,6 +23,14 @@ class CreateTransactionService {
     category,
   }: Request): Promise<Transaction> {
     const transactionsRepository = getCustomRepository(TransactionRepository);
+
+    const { total } = await transactionsRepository.getBalance();
+
+    const outcomeGreaterThanTotal = type === 'outcome' && value > total;
+
+    if (outcomeGreaterThanTotal) {
+      throw new AppError('Outcome greater than total.');
+    }
 
     const findOrCreateCategory = new FindOrCreateCategoryService();
 
