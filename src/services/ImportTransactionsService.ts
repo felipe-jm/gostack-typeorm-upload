@@ -23,23 +23,30 @@ class ImportTransactionsService {
 
     const transactions: Transaction[] = [];
 
-    try {
-      fs.createReadStream(path)
-        .pipe(
-          csv({
-            headers: ['title', 'type', 'value', 'category'],
-            mapValues: ({ value }) => value.trim().toLowerCase(),
-          }),
-        )
-        .on('data', async row => {
-          if (row.type === 'income' || row.type === 'outcome') {
-            const transaction = await createTransactionService.execute(row);
-            transactions.push(transaction);
-          }
-        });
-    } catch (err) {
-      throw new AppError('Error trying to read CSV file');
-    }
+    fs.createReadStream(path)
+      .pipe(
+        csv({
+          headers: ['title', 'type', 'value', 'category'],
+          mapValues: ({ value }) => value.trim(),
+          strict: true,
+        }),
+      )
+      .on('data', async ({ title, value, type, category }: Row) => {
+        if (type === 'income' || type === 'outcome') {
+          const transaction = await createTransactionService.execute({
+            title,
+            value,
+            type,
+            category,
+          });
+
+          transactions.push(transaction);
+        }
+      })
+      .on('end', () => transactions)
+      .on('error', () => {
+        throw new AppError('Error trying to read CSV file');
+      });
 
     return transactions;
   }
