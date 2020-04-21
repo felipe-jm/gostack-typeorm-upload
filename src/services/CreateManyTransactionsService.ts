@@ -56,16 +56,14 @@ class CreateManyTransactionsService {
       throw new AppError('Invalid CSV. Outcomes sum is greater than Incomes.');
     }
 
-    const transactions = requestArray.map(async request => {
-      const transaction = await this.createTransaction(request);
-      return transaction;
-    });
+    const transactions: Transaction[] = [];
 
-    const createdTransactions = await Promise.all(transactions);
+    for (const transaction of requestArray) {
+      const createdTransaction = await this.createTransaction(transaction);
+      transactions.push(createdTransaction);
+    }
 
-    const transactionsSaved = await transactionsRepository.save(
-      createdTransactions,
-    );
+    const transactionsSaved = await transactionsRepository.save(transactions);
 
     return transactionsSaved;
   }
