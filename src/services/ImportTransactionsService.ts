@@ -1,9 +1,9 @@
-import csv from 'csv-parser';
 import fs from 'fs';
+import csv from 'csv-parser';
 
 import Transaction from '../models/Transaction';
 
-import CreateTransactionService from './CreateTransactionService';
+import CreateManyTransactionsService from './CreateManyTransactionsService';
 import AppError from '../errors/AppError';
 
 interface Request {
@@ -19,36 +19,35 @@ interface Row {
 
 class ImportTransactionsService {
   async execute({ path }: Request): Promise<Transaction[]> {
-    const createTransactionService = new CreateTransactionService();
+    const createManyTransactionsService = new CreateManyTransactionsService();
 
-    const transactions: Transaction[] = [];
+    const readStream = fs.createReadStream(path);
 
-    fs.createReadStream(path)
-      .pipe(
-        csv({
-          headers: ['title', 'type', 'value', 'category'],
-          mapValues: ({ value }) => value.trim(),
-          strict: true,
-        }),
-      )
-      .on('data', async ({ title, value, type, category }: Row) => {
-        if (type === 'income' || type === 'outcome') {
-          const transaction = await createTransactionService.execute({
-            title,
-            value,
-            type,
-            category,
-          });
+    const parser = readStream.pipe(
+      csv({
+        headers: ['title', 'type', 'value', 'category'],
+        mapValues: ({ value }) => value.trim(),
+        skipLines: 1,
+      }),
+    );
 
-          transactions.push(transaction);
-        }
-      })
-      .on('end', () => transactions)
-      .on('error', () => {
-        throw new AppError('Error trying to read CSV file');
-      });
+    const transactions: Row[] = [];
 
-    return transactions;
+    parser.on('data', async (transaction: Row) => {
+      transactions.push(transaction);
+    });
+
+    parser.on('error', () => {
+      throw new AppError('Error trying to read CSV file');
+    });
+
+    await new Promise(resolve => parser.on('end', resolve));
+
+    const createdTransactions = await createManyTransactionsService.execute(
+      transactions,
+    );
+
+    return createdTransactions;
   }
 }
 

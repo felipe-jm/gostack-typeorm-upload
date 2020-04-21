@@ -19,7 +19,7 @@ class FindOrCreateCategory {
         title,
       });
 
-      await categoriesRepository.save(category);
+      await categoriesRepository.save(category, { reload: true });
 
       return category;
     }

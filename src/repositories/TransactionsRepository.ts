@@ -15,17 +15,11 @@ class TransactionsRepository extends Repository<Transaction> {
 
     const outcomesSum = transactions
       .filter(transaction => transaction.type === 'outcome')
-      .reduce(
-        (accumulator, currentValue) => accumulator + currentValue.value,
-        0,
-      );
+      .reduce((accumulator, { value }) => Number(value) + accumulator, 0);
 
     const incomesSum = transactions
       .filter(transaction => transaction.type === 'income')
-      .reduce(
-        (accumulator, currentValue) => accumulator + currentValue.value,
-        0,
-      );
+      .reduce((accumulator, { value }) => Number(value) + accumulator, 0);
 
     const balance = {
       income: incomesSum,

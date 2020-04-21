@@ -25,7 +25,7 @@ class Transaction {
   })
   type: TransactionType;
 
-  @Column('float')
+  @Column('decimal')
   value: number;
 
   @Column()
